@@ -30,7 +30,7 @@ export async function createEmbeddings(text: string[]) {
 export async function findClosest(query: string) {
   const embed = await createEmbedding(query);
   const items =
-    await prisma.$queryRaw`SELECT "id", "title", "icon", "description" FROM "Service" ORDER BY embedding <-> ${embed}::vector LIMIT 5`;
+    await prisma.$queryRaw`SELECT "id", "title", "icon", "description" FROM "Service" ORDER BY embedding <-> ${embed}::vector LIMIT 3`;
 
   return items as Service[];
 }
