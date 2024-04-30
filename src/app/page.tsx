@@ -3,17 +3,29 @@
 import { search } from "@/lib/actions";
 import { Service } from "@prisma/client";
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+
+const suggestions = [
+  "My car isn't stopping like it's supposed to",
+  "Some fluid is leaking from my car",
+  "My tire is flat",
+];
 
 export default function Home() {
   const [items, setItems] = useState<Service[]>([]);
+  const [query, setQuery] = useState<string | null>("");
+
   return (
-    <div>
+    <div className="overflow-hidden">
       <motion.div
-        className="flex flex-col w-full justify-center items-center my-12 "
+        className="flex flex-col w-full justify-center items-center"
         initial={{ height: "100dvh" }}
-        animate={{ height: items.length > 0 ? "auto" : "100dvh" }}
+        animate={{
+          height: items.length > 0 ? "auto" : "100dvh",
+          marginTop: items.length > 0 ? "3rem" : "auto",
+          marginBottom: items.length > 0 ? "2.5rem" : "auto",
+        }}
       >
         <form
           //@ts-expect-error
@@ -24,25 +36,46 @@ export default function Home() {
 
             console.log(searchItems);
           }}
-          className="w-full flex justify-center"
+          className="w-full flex flex-col justify-center items-center gap-y-4"
         >
           <input
             name="query"
-            placeholder="Search for a service..."
-            className="max-w-[70%] w-full rounded-lg h-16 text-4xl outline-none px-4"
+            value={query || ""}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ask something, like you would a mechanic..."
+            className="max-w-[70%] w-full rounded-lg h-16 text-4xl outline-none px-4 placeholder-xl"
           />
+          {items.length <= 0 && (
+            <>
+              <div className="text-white">Try...</div>
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => {
+                    setQuery(suggestion);
+                  }}
+                  className="text-roda-yellow"
+                  type="submit"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </>
+          )}
         </form>
-        {/* <div className="max-w-[70%] w-full mt-12 flex flex-col gap-y-2"></div> */}
       </motion.div>
-      <div className="w-full flex justify-center">
-        <AnimatePresence>
-          {items.length > 0 && (
+      <AnimatePresence>
+        {items.length > 0 && (
+          <div className="w-full flex justify-center overflow-scroll mb-12">
             <motion.div
               className="max-w-[70%] flex flex-col gap-y-2 justify-center items-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
+              <div className="text-left w-full text-white">
+                Here's what we'd recommend...
+              </div>
               {items.map((e) => (
                 <div key={e.id} className="w-full bg-white rounded-lg p-4">
                   <div className="flex gap-x-2 items-center bg-roda-yellow w-fit px-2">
@@ -60,9 +93,9 @@ export default function Home() {
                 </div>
               ))}
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
