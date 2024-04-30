@@ -117,7 +117,7 @@ export default function Home() {
               exit={{ opacity: 0 }}
             >
               <div className="text-left w-full text-white">
-                Here's what we'd recommend...
+                Here&apos;s what we&apos;d recommend...
               </div>
               {items.map((e) => (
                 <div
