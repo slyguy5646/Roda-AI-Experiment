@@ -1,20 +1,36 @@
 "use client";
 
-import { search } from "@/lib/actions";
 import { Service } from "@prisma/client";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { FindSchema } from "./api/find/route";
 
 const suggestions = [
   "My car isn't stopping like it's supposed to",
-  "Some fluid is leaking from my car",
   "My tire is flat",
+  "Some fluid is leaking from my car",
 ];
 
 export default function Home() {
   const [items, setItems] = useState<Service[]>([]);
   const [query, setQuery] = useState<string | null>("");
+
+  async function fetchItems(searchQuery?: string) {
+    const res = await fetch("/api/find", {
+      method: "POST",
+      body: JSON.stringify({
+        query: searchQuery || query || "",
+      } satisfies FindSchema),
+    });
+
+    if (res.ok) {
+      const body = await res.json();
+
+      setItems(body.closest);
+      console.log(body.closest);
+    }
+  }
 
   return (
     <div className="overflow-hidden">
@@ -28,47 +44,74 @@ export default function Home() {
         }}
       >
         <form
-          //@ts-expect-error
-          action={async (formData) => {
-            const searchItems = await search(formData);
-
-            setItems(searchItems);
-
-            console.log(searchItems);
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await fetchItems();
           }}
           className="w-full flex flex-col justify-center items-center gap-y-4"
         >
-          <input
-            name="query"
-            value={query || ""}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ask something, like you would a mechanic..."
-            className="max-w-[70%] w-full rounded-lg h-16 text-4xl outline-none px-4 placeholder-xl"
-          />
-          {items.length <= 0 && (
-            <>
-              <div className="text-white">Try...</div>
+          <div className="flex items-center gap-x-2 w-full justify-center md:max-w-[70%] max-w-[95%]">
+            {items.length > 0 && (
+              <button
+                onClick={() => {
+                  setQuery("");
+                  setItems([]);
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-6 h-6 text-roda-yellow"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+                  />
+                </svg>
+              </button>
+            )}
+
+            <input
+              name="query"
+              value={query || ""}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setItems([]);
+              }}
+              placeholder="Ask something, like you would a mechanic..."
+              className=" w-full rounded-lg h-16 text-xl md:text-4xl outline-none px-4 placeholder-xl"
+            />
+          </div>
+        </form>
+        {items.length <= 0 && (
+          <div className="flex flex-col justify-center items-center gap-y-4 mt-6">
+            <div className="text-white">Try...</div>
+            <div className="flex md:flex-row flex-col items-center md:items-start justify-evenly w-full gap-y-2">
               {suggestions.map((suggestion) => (
                 <button
                   key={suggestion}
-                  onClick={() => {
+                  onClick={async () => {
                     setQuery(suggestion);
+                    fetchItems(suggestion);
                   }}
-                  className="text-roda-yellow"
-                  type="submit"
+                  className="text-roda-yellow flex-[0.33]"
                 >
                   {suggestion}
                 </button>
               ))}
-            </>
-          )}
-        </form>
+            </div>
+          </div>
+        )}
       </motion.div>
       <AnimatePresence>
         {items.length > 0 && (
           <div className="w-full flex justify-center overflow-scroll mb-12">
             <motion.div
-              className="max-w-[70%] flex flex-col gap-y-2 justify-center items-center"
+              className="max-w-[95%] md:max-w-[70%] w-full flex flex-col gap-y-2 justify-center items-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -77,7 +120,10 @@ export default function Home() {
                 Here's what we'd recommend...
               </div>
               {items.map((e) => (
-                <div key={e.id} className="w-full bg-white rounded-lg p-4">
+                <div
+                  key={e.id}
+                  className="w-full bg-white rounded-lg p-4 min-w-full"
+                >
                   <div className="flex gap-x-2 items-center bg-roda-yellow w-fit px-2">
                     <div className="text-2xl">{e.title}</div>
                     {e.icon && (
