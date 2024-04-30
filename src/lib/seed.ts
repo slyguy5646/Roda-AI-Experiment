@@ -1,4 +1,3 @@
-import { readFile } from "fs/promises";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import fs from "node:fs";
